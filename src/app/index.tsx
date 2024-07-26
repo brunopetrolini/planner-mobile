@@ -34,7 +34,7 @@ export default function Index() {
   const [emailsToInvite, setEmailsToInvite] = useState<string[]>([]);
 
   function handleNextStepForm() {
-    if (destination.trim().length === 0 || selectedDates.startsAt || selectedDates.endsAt) {
+    if (destination.trim().length === 0 || !selectedDates.startsAt || !selectedDates.endsAt) {
       return Alert.alert('Detalhes da viagem', 'Preencha todas as informações da viagem para continuar.');
     }
 
