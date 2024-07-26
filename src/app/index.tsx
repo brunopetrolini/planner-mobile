@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { ArrowRight, AtSign, Calendar as CalendarIcon, MapPin, Settings2, UserRoundPlus } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, Image, Keyboard, Text, View } from 'react-native';
+import { Alert, Image, Keyboard, KeyboardAvoidingView, Platform, Text, View } from 'react-native';
 import type { DateData } from 'react-native-calendars';
 
 import { Button } from '@/components/button';
@@ -74,7 +74,10 @@ export default function Index() {
   }
 
   return (
-    <View className="flex-1 justify-center items-center px-5">
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      className="flex-1 justify-center items-center px-5"
+    >
       <Image source={require('@/assets/logo.png')} className="h-8" resizeMode="contain" />
 
       <Image source={require('@/assets/bg.png')} className="absolute" />
@@ -117,7 +120,18 @@ export default function Index() {
 
             <Input>
               <UserRoundPlus color={colors.zinc[400]} size={20} />
-              <Input.Field placeholder="Quem estará na viagem?" />
+              <Input.Field
+                placeholder="Quem estará na viagem?"
+                autoCorrect={false}
+                autoCapitalize="none"
+                editable={false}
+                value={emailsToInvite.length > 0 ? `${emailsToInvite.length} pessoa(s) convidada(s)` : undefined}
+                onPressIn={() => {
+                  Keyboard.dismiss();
+                  setShowModal(MODAL.GUESTS);
+                }}
+                showSoftInputOnFocus={false}
+              />
             </Input>
           </>
         )}
@@ -184,6 +198,6 @@ export default function Index() {
           </Button>
         </View>
       </Modal>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
