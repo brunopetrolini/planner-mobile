@@ -1,15 +1,17 @@
 import dayjs from 'dayjs';
-import { ArrowRight, Calendar as CalendarIcon, MapPin, Settings2, UserRoundPlus } from 'lucide-react-native';
+import { ArrowRight, AtSign, Calendar as CalendarIcon, MapPin, Settings2, UserRoundPlus } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, Image, Keyboard, Text, View } from 'react-native';
 import type { DateData } from 'react-native-calendars';
 
 import { Button } from '@/components/button';
 import { Calendar } from '@/components/calendar';
+import { GuestEmail } from '@/components/email';
 import { Input } from '@/components/input';
 import { Modal } from '@/components/modal';
 import { colors } from '@/styles/colors';
 import { calendarUtils, type DatesSelected } from '@/utils/calendarUtils';
+import { validateInput } from '@/utils/validateInput';
 
 enum FORM_STEP {
   TRIP_DETAILS = 1,
@@ -19,7 +21,7 @@ enum FORM_STEP {
 enum MODAL {
   NONE = 0,
   CALENDAR = 1,
-  GUEST = 2,
+  GUESTS = 2,
 }
 
 export default function Index() {
@@ -28,6 +30,8 @@ export default function Index() {
 
   const [destination, setDestination] = useState('');
   const [selectedDates, setSelectedDates] = useState({} as DatesSelected);
+  const [emailToInvite, setEmailToInvite] = useState('');
+  const [emailsToInvite, setEmailsToInvite] = useState<string[]>([]);
 
   function handleNextStepForm() {
     if (destination.trim().length === 0 || selectedDates.startsAt || selectedDates.endsAt) {
@@ -50,6 +54,23 @@ export default function Index() {
       selectedDay,
     });
     setSelectedDates(dates);
+  }
+
+  function handleRemoveEmail(emailToRemove: string) {
+    setEmailsToInvite(emailsToInvite.filter((email) => email !== emailToRemove));
+  }
+
+  function handleAddEmail() {
+    if (!validateInput.email(emailToInvite)) {
+      return Alert.alert('Convidado', 'Digite um e-mail válido para convidar alguém.');
+    }
+
+    if (emailsToInvite.includes(emailToInvite)) {
+      return Alert.alert('Convidado', 'Este e-mail já foi adicionado.');
+    }
+
+    setEmailsToInvite((prevState) => [...prevState, emailToInvite]);
+    setEmailToInvite('');
   }
 
   return (
@@ -118,11 +139,48 @@ export default function Index() {
         visible={showModal === MODAL.CALENDAR}
         onClose={() => setShowModal(MODAL.NONE)}
       >
-        <View className="gap-4 mt-4">
+        <View className="gap-4 mt-4 mb-6">
           <Calendar onDayPress={handleSelectDates} markedDates={selectedDates.dates} minDate={dayjs().toISOString()} />
 
           <Button onPress={() => setShowModal(MODAL.NONE)}>
             <Button.Title>Confirmar</Button.Title>
+          </Button>
+        </View>
+      </Modal>
+
+      <Modal
+        title="Selecionar convidados"
+        subtitle="Os convidados irão receber e-mails para confirmar a participação na viagem."
+        visible={showModal === MODAL.GUESTS}
+        onClose={() => setShowModal(MODAL.NONE)}
+      >
+        <View className="my-2 flex-wrap gap-2 border-b border-zinc-800 py-5 items-center">
+          {emailsToInvite.length > 0 ? (
+            emailsToInvite.map((email) => (
+              <GuestEmail key={email} email={email} onRemove={() => handleRemoveEmail(email)} />
+            ))
+          ) : (
+            <Text className="text-zinc-600 text-base font-regular">Nenhum e-mail adicionado.</Text>
+          )}
+        </View>
+
+        <View className="gap-4 mt-4 mb-6">
+          <Input variant="secondary">
+            <AtSign color={colors.zinc[400]} size={20} />
+            <Input.Field
+              placeholder="Digite o e-mail do convidado"
+              keyboardType="email-address"
+              onChangeText={(text) => setEmailToInvite(text.toLowerCase())}
+              value={emailToInvite}
+              returnKeyType="send"
+              onSubmitEditing={handleAddEmail}
+              autoCorrect={false}
+              autoCapitalize="none"
+            />
+          </Input>
+
+          <Button onPress={handleAddEmail}>
+            <Button.Title>Convidar</Button.Title>
           </Button>
         </View>
       </Modal>
