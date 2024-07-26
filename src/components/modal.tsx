@@ -12,7 +12,7 @@ type Props = ModalProps & {
 
 export function Modal({ title, subtitle = '', onClose, children, ...rest }: Props) {
   return (
-    <RNModal transparent animationType="fade" {...rest}>
+    <RNModal transparent animationType="slide" {...rest}>
       <BlurView className="flex-1" intensity={7} tint="dark" experimentalBlurMethod="dimezisBlurView">
         <View className="flex-1 justify-end bg-black/60">
           <View className="bg-zinc-900 border-t border-zinc-700 px-6 pt-5 pb-10">
