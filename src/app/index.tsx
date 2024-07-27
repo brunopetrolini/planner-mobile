@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
+import { router } from 'expo-router';
 import { ArrowRight, AtSign, Calendar as CalendarIcon, MapPin, Settings2, UserRoundPlus } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Image, Keyboard, KeyboardAvoidingView, Platform, Text, View } from 'react-native';
 import type { DateData } from 'react-native-calendars';
 
@@ -8,13 +9,13 @@ import { Button } from '@/components/button';
 import { Calendar } from '@/components/calendar';
 import { GuestEmail } from '@/components/email';
 import { Input } from '@/components/input';
+import { Loading } from '@/components/loading';
 import { Modal } from '@/components/modal';
 import { tripServer } from '@/server/trip-server';
 import { tripStorage } from '@/storage/trip';
 import { colors } from '@/styles/colors';
 import { calendarUtils, type DatesSelected } from '@/utils/calendarUtils';
 import { validateInput } from '@/utils/validateInput';
-import { router } from 'expo-router';
 
 enum FORM_STEP {
   TRIP_DETAILS = 1,
@@ -29,6 +30,7 @@ enum MODAL {
 
 export default function Index() {
   const [isCreatingTrip, setIsCreatingTrip] = useState(false);
+  const [isGettingTrip, setIsGettingTrip] = useState(true);
 
   const [formStep, setFormStep] = useState(FORM_STEP.TRIP_DETAILS);
   const [showModal, setShowModal] = useState(MODAL.NONE);
@@ -119,6 +121,30 @@ export default function Index() {
       setIsCreatingTrip(false);
       console.error(error);
     }
+  }
+
+  async function getTrip() {
+    try {
+      const tripId = await tripStorage.get();
+
+      if (!tripId) {
+        return setIsGettingTrip(false);
+      }
+
+      const trip = await tripServer.getById(tripId);
+      return router.navigate(`/trip/${trip.id}`);
+    } catch (error) {
+      setIsGettingTrip(false);
+      console.error(error);
+    }
+  }
+
+  useEffect(() => {
+    getTrip();
+  }, []);
+
+  if (isGettingTrip) {
+    return <Loading />;
   }
 
   return (
