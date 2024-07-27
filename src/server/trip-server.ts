@@ -8,14 +8,14 @@ export type TripDetails = {
   is_confirmed: boolean;
 };
 
-type CreateTrip = Omit<TripDetails, 'id' | 'is_confirmed'> & {
-  emails_to_invite: string[];
-};
-
 async function getById(id: string): Promise<TripDetails> {
   const { data } = await api.get<{ trip: TripDetails }>(`/trips/${id}`);
   return data.trip;
 }
+
+type CreateTrip = Omit<TripDetails, 'id' | 'is_confirmed'> & {
+  emails_to_invite: string[];
+};
 
 async function create(payload: CreateTrip): Promise<{ tripId: string }> {
   const { data } = await api.post<{ tripId: string }>('/trips', {
@@ -26,4 +26,11 @@ async function create(payload: CreateTrip): Promise<{ tripId: string }> {
   return data;
 }
 
-export const tripServer = { create, getById };
+type UpdateTrip = Omit<TripDetails, 'is_confirmed'>;
+
+async function update(payload: UpdateTrip): Promise<void> {
+  const { id, ...rest } = payload;
+  await api.put(`/trips/${payload.id}`, rest);
+}
+
+export const tripServer = { create, getById, update };
