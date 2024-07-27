@@ -73,6 +73,8 @@ export default function Index() {
     setEmailToInvite('');
   }
 
+  async function saveTrip(id: string) {}
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
