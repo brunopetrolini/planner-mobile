@@ -9,9 +9,12 @@ import { Calendar } from '@/components/calendar';
 import { GuestEmail } from '@/components/email';
 import { Input } from '@/components/input';
 import { Modal } from '@/components/modal';
+import { tripServer } from '@/server/trip-server';
+import { tripStorage } from '@/storage/trip';
 import { colors } from '@/styles/colors';
 import { calendarUtils, type DatesSelected } from '@/utils/calendarUtils';
 import { validateInput } from '@/utils/validateInput';
+import { router } from 'expo-router';
 
 enum FORM_STEP {
   TRIP_DETAILS = 1,
@@ -25,6 +28,8 @@ enum MODAL {
 }
 
 export default function Index() {
+  const [isCreatingTrip, setIsCreatingTrip] = useState(false);
+
   const [formStep, setFormStep] = useState(FORM_STEP.TRIP_DETAILS);
   const [showModal, setShowModal] = useState(MODAL.NONE);
 
@@ -45,6 +50,17 @@ export default function Index() {
     if (formStep === FORM_STEP.TRIP_DETAILS) {
       return setFormStep(FORM_STEP.ADD_EMAILS);
     }
+
+    Alert.alert('Nova viagem', 'Deseja confirmar a viagem?', [
+      {
+        text: 'Não',
+        style: 'cancel',
+      },
+      {
+        text: 'Sim',
+        onPress: createTrip,
+      },
+    ]);
   }
 
   function handleSelectDates(selectedDay: DateData) {
@@ -73,7 +89,37 @@ export default function Index() {
     setEmailToInvite('');
   }
 
-  async function saveTrip(id: string) {}
+  async function saveTrip(id: string) {
+    try {
+      await tripStorage.save(id);
+      router.navigate(`/trip/${id}`);
+    } catch (error) {
+      Alert.alert('Salvar viagem', 'Não foi possível salvar o ID da viagem no dispositivo.');
+      console.error(error);
+    }
+  }
+
+  async function createTrip() {
+    try {
+      setIsCreatingTrip(true);
+
+      const { tripId } = await tripServer.create({
+        destination,
+        starts_at: dayjs(selectedDates.startsAt?.dateString).toString(),
+        ends_at: dayjs(selectedDates.endsAt?.dateString).toString(),
+        emails_to_invite: emailsToInvite,
+      });
+
+      Alert.alert('Nova viagem', 'Viagem criada com sucesso!', [
+        { text: 'Ok, continuar', onPress: () => saveTrip(tripId) },
+      ]);
+
+      setIsCreatingTrip(false);
+    } catch (error) {
+      setIsCreatingTrip(false);
+      console.error(error);
+    }
+  }
 
   return (
     <KeyboardAvoidingView
@@ -138,7 +184,7 @@ export default function Index() {
           </>
         )}
 
-        <Button onPress={handleNextStepForm}>
+        <Button onPress={handleNextStepForm} isLoading={isCreatingTrip}>
           <Button.Title>{formStep == FORM_STEP.TRIP_DETAILS ? 'Continuar' : 'Confirmar viagem'}</Button.Title>
           <ArrowRight color={colors.lime[950]} size={20} />
         </Button>
