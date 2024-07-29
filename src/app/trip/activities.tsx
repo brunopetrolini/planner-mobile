@@ -1,8 +1,9 @@
 import dayjs from 'dayjs';
 import { Calendar as CalendarIcon, Clock, PlusIcon, Tag } from 'lucide-react-native';
-import { useState } from 'react';
-import { Alert, Keyboard, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Keyboard, SectionList, Text, View } from 'react-native';
 
+import { Activity, type ActivityProps } from '@/components/activity';
 import { Button } from '@/components/button';
 import { Calendar } from '@/components/calendar';
 import { Input } from '@/components/input';
@@ -21,10 +22,20 @@ enum MODAL {
   NEW_ACTIVITY = 2,
 }
 
+type TripActivity = {
+  title: {
+    dayNumber: number;
+    dayName: string;
+  };
+  data: ActivityProps[];
+};
+
 export function Activities({ tripDetails }: ActivitiesProps) {
   const [showModal, setShowModal] = useState(MODAL.NONE);
   const [isCreatingActivity, setIsCreatingActivity] = useState(false);
+  const [isLoadingTripActivities, setIsLoadingTripActivities] = useState(true);
 
+  const [tripActivities, setTripActivities] = useState<TripActivity[]>([]);
   const [activityTitle, setActivityTitle] = useState('');
   const [activityDate, setActivityDate] = useState('');
   const [activityHour, setActivityHour] = useState('');
@@ -52,9 +63,10 @@ export function Activities({ tripDetails }: ActivitiesProps) {
       Alert.alert('Nova atividade', 'A atividade foi cadastrada com sucesso.', [
         {
           text: 'OK, continuar',
-          onPress: () => {
+          onPress: async () => {
             setShowModal(MODAL.NONE);
             resetNewActivityFields();
+            await getTripActivities();
           },
         },
       ]);
@@ -64,6 +76,35 @@ export function Activities({ tripDetails }: ActivitiesProps) {
       setIsCreatingActivity(false);
     }
   }
+
+  async function getTripActivities() {
+    try {
+      const { activities } = await activitiesServer.getActivitiesByTripId(tripDetails.id);
+
+      const activitiesToSectionList = activities.map((dayActivity) => ({
+        title: {
+          dayNumber: dayjs(dayActivity.date).date(),
+          dayName: dayjs(dayActivity.date).format('dddd').replace('-feira', ''),
+        },
+        data: dayActivity.activities.map((activity) => ({
+          id: activity.id,
+          title: activity.title,
+          hour: dayjs(activity.occurs_at).format('HH:mm[h]'),
+          isBefore: dayjs(activity.occurs_at).isBefore(dayjs()),
+        })),
+      }));
+
+      setTripActivities(activitiesToSectionList);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoadingTripActivities(false);
+    }
+  }
+
+  useEffect(() => {
+    getTripActivities();
+  }, []);
 
   return (
     <View className="flex-1">
@@ -75,6 +116,26 @@ export function Activities({ tripDetails }: ActivitiesProps) {
           <Button.Title>Nova atividade</Button.Title>
         </Button>
       </View>
+
+      <SectionList
+        showsVerticalScrollIndicator={false}
+        sections={tripActivities}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <Activity data={item} />}
+        renderSectionHeader={({ section }) => (
+          <View className="w-full bg-zinc-950">
+            <Text className="text-zinc-50 text-2xl font-semibold py-2">
+              Dia {section.title.dayNumber + ' '}
+              <Text className="text-zinc-500 text-base font-regular capitalize">{section.title.dayName}</Text>
+            </Text>
+
+            {section.data.length === 0 && (
+              <Text className="text-zinc-500 font-regular text-sm mb-8">Nenhuma atividade cadastrada nessa data.</Text>
+            )}
+          </View>
+        )}
+        contentContainerClassName="gap-3 pb-48"
+      />
 
       <Modal
         title="Cadastrar atividade"
