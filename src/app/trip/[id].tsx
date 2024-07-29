@@ -84,7 +84,7 @@ export default function Trip() {
       if (!destination || !selectedDates.startsAt || !selectedDates.endsAt) {
         return Alert.alert(
           'Atualizar viagem',
-          'Lembres-e de, além de preencher o destino, selecione a data de início em fim da viagem.'
+          'Lembre-se de, além de preencher o destino, selecione a data de início em fim da viagem.'
         );
       }
 
