@@ -112,6 +112,7 @@ export function Details({ tripId }: DetailsProps) {
       <View className="flex-1">
         {links.length > 0 ? (
           <FlatList
+            showsVerticalScrollIndicator={false}
             data={links}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <TripLink data={item} />}
@@ -131,10 +132,11 @@ export function Details({ tripId }: DetailsProps) {
         <Text className="text-zinc-50 text-2xl font-semibold my-6">Convidados</Text>
 
         <FlatList
+          showsVerticalScrollIndicator={false}
           data={participants}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <Participant data={item} />}
-          contentContainerClassName="gap-4"
+          contentContainerClassName="gap-4 pb-44"
         />
       </View>
 
