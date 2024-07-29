@@ -1,14 +1,17 @@
+import { Plus } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import { Alert, FlatList, Text, View } from 'react-native';
+
 import { Button } from '@/components/button';
 import { Input } from '@/components/input';
 import { Loading } from '@/components/loading';
 import { Modal } from '@/components/modal';
+import { Participant, type ParticipantProps } from '@/components/participant';
 import { TripLink, type TripLinkProps } from '@/components/tripLink';
 import { linksServer } from '@/server/links-server';
+import { participantsServer } from '@/server/participants-server';
 import { colors } from '@/styles/colors';
 import { validateInput } from '@/utils/validateInput';
-import { Plus } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
-import { Alert, FlatList, Text, View } from 'react-native';
 
 type DetailsProps = {
   tripId: string;
@@ -25,10 +28,12 @@ export function Details({ tripId }: DetailsProps) {
 
   const [isCreatingTripLink, setIsCreatingTripLink] = useState(false);
   const [isLoadingTripLinks, setIsLoadingTripLinks] = useState(true);
+  const [isLoadingTripGuests, setIsLoadingTripGuests] = useState(true);
 
   const [linkTitle, setLinkTitle] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
   const [links, setLinks] = useState<TripLinkProps[]>([]);
+  const [participants, setParticipants] = useState<ParticipantProps[]>([]);
 
   function resetLinkFields() {
     setLinkTitle('');
@@ -81,11 +86,22 @@ export function Details({ tripId }: DetailsProps) {
     }
   }
 
+  async function getTripGuests() {
+    try {
+      const { participants } = await participantsServer.getByTripId(tripId);
+      setParticipants(participants);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoadingTripGuests(false);
+    }
+  }
+
   useEffect(() => {
-    getTripLinks();
+    Promise.all([getTripLinks(), getTripGuests()]);
   }, []);
 
-  if (isLoadingTripLinks) {
+  if (isLoadingTripLinks || isLoadingTripGuests) {
     return <Loading />;
   }
 
@@ -109,6 +125,17 @@ export function Details({ tripId }: DetailsProps) {
           <Plus color={colors.zinc[200]} size={20} />
           <Button.Title>Adicionar link</Button.Title>
         </Button>
+      </View>
+
+      <View className="flex-1 border-t border-zinc-800 mt-6">
+        <Text className="text-zinc-50 text-2xl font-semibold my-6">Convidados</Text>
+
+        <FlatList
+          data={participants}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <Participant data={item} />}
+          contentContainerClassName="gap-4"
+        />
       </View>
 
       <Modal
