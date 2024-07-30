@@ -49,6 +49,10 @@ export default function Trip() {
     try {
       setIsLoadingTrip(true);
 
+      if (participantId) {
+        setShowModal(MODAL.CONFIRM_PRESENCE);
+      }
+
       if (!tripId) {
         return router.back();
       }
