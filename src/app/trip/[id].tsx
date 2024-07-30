@@ -1,8 +1,8 @@
 import dayjs from 'dayjs';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Calendar as CalendarIcon, CalendarRange, Info, MapPin, Settings2 } from 'lucide-react-native';
+import { Calendar as CalendarIcon, CalendarRange, Info, Mail, MapPin, Settings2, User } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Alert, Keyboard, TouchableOpacity, View } from 'react-native';
+import { Alert, Keyboard, Text, TouchableOpacity, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Calendar } from '@/components/calendar';
@@ -203,6 +203,33 @@ export default function Trip() {
 
           <Button onPress={() => setShowModal(MODAL.UPDATE_TRIP)}>
             <Button.Title>Confirmar</Button.Title>
+          </Button>
+        </View>
+      </Modal>
+
+      <Modal title="Confirmar presença">
+        <View className="gap-4 mt-4 mb-8">
+          <Text className="text-zinc-400 front-regular leading-6 mt-2">
+            Você foi convidado(a) para participar de uma viagem para{' '}
+            <Text className="font-semibold text-zinc-100">{tripDetails.destination}</Text> nas datas de{' '}
+            <Text className="font-semibold text-zinc-100">{`${dayjs(tripDetails.starts_at).format(
+              'D [de] MMMM'
+            )} à ${dayjs(tripDetails.ends_at).format('D [de] MMMM')}`}</Text>
+            . {'\n\n'}Para confirmar sua presença, preencha os dados abaixo:
+          </Text>
+
+          <Input variant="secondary">
+            <User color={colors.zinc[400]} size={20} />
+            <Input.Field placeholder="Seu nome completo" />
+          </Input>
+
+          <Input variant="secondary">
+            <Mail color={colors.zinc[400]} size={20} />
+            <Input.Field placeholder="E-mail de confirmação" />
+          </Input>
+
+          <Button>
+            <Button.Title>Confirmar minha presença</Button.Title>
           </Button>
         </View>
       </Modal>
