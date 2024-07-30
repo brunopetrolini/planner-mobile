@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
-    "reset-project": "node ./scripts/reset-project.js",
+    "start:clear": "expo start --clear",
+    "start:wsl": "REACT_NATIVE_PACKAGER_HOSTNAME=$(node get_network_local_ip.js) expo start",
+    "start:wsl:clear": "REACT_NATIVE_PACKAGER_HOSTNAME=$(node get_network_local_ip.js) expo start --clear",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
