@@ -167,6 +167,27 @@ export default function Trip() {
     }
   }
 
+  async function handleRemoveTrip() {
+    try {
+      Alert.alert('Remover viagem', 'Tem certeza que deseja remover essa viagem?', [
+        {
+          text: 'Não',
+          style: 'cancel',
+        },
+        {
+          text: 'Sim',
+          style: 'destructive',
+          onPress: async () => {
+            await tripStorage.remove();
+            router.navigate('/');
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   useEffect(() => {
     getTripDetails();
   }, []);
@@ -241,6 +262,10 @@ export default function Trip() {
           <Button onPress={handleUpdateTrip} isLoading={isUpdatingTrip}>
             <Button.Title>Atualizar</Button.Title>
           </Button>
+
+          <TouchableOpacity activeOpacity={0.8} onPress={handleRemoveTrip}>
+            <Text className="text-red-400 text-center mt-4 mb-2">Remover viagem</Text>
+          </TouchableOpacity>
         </View>
       </Modal>
 
