@@ -9,9 +9,12 @@ import { Calendar } from '@/components/calendar';
 import { Input } from '@/components/input';
 import { Loading } from '@/components/loading';
 import { Modal } from '@/components/modal';
+import { participantsServer } from '@/server/participants-server';
 import { TripDetails, tripServer } from '@/server/trip-server';
+import { tripStorage } from '@/storage/trip';
 import { colors } from '@/styles/colors';
 import { calendarUtils, DatesSelected } from '@/utils/calendarUtils';
+import { validateInput } from '@/utils/validateInput';
 import { DateData } from 'react-native-calendars';
 import { Activities } from './activities';
 import { Details } from './details';
@@ -24,19 +27,23 @@ enum MODAL {
   NONE = 0,
   UPDATE_TRIP = 1,
   CALENDAR = 2,
+  CONFIRM_PRESENCE = 3,
 }
 
 export default function Trip() {
   const [isLoadingTrip, setIsLoadingTrip] = useState(true);
   const [isUpdatingTrip, setIsUpdatingTrip] = useState(false);
+  const [isConfirmingPresence, setIsConfirmingPresence] = useState(false);
   const [showModal, setShowModal] = useState(MODAL.NONE);
 
   const [tripDetails, setTripDetails] = useState<TripData>({} as TripData);
   const [option, setOption] = useState<'activities' | 'details'>('activities');
   const [destination, setDestination] = useState('');
   const [selectedDates, setSelectedDates] = useState({} as DatesSelected);
+  const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
 
-  const { id: tripId } = useLocalSearchParams<{ id: string }>();
+  const { id: tripId, participant: participantId } = useLocalSearchParams<{ id: string; participant?: string }>();
 
   async function getTripDetails() {
     try {
@@ -112,6 +119,47 @@ export default function Trip() {
       console.error(error);
     } finally {
       setIsUpdatingTrip(false);
+    }
+  }
+
+  async function handleConfirmPresence() {
+    try {
+      if (!tripId || !participantId) {
+        return;
+      }
+
+      if (!guestName.trim() || !guestEmail.trim()) {
+        return Alert.alert('Confirmar presença', 'Preencha seu nome e e-mail para confirmar sua presença.');
+      }
+
+      if (validateInput.email(guestEmail.trim())) {
+        return Alert.alert('Confirmar presença', 'Preencha um e-mail válido.');
+      }
+
+      setIsConfirmingPresence(true);
+
+      await participantsServer.confirmTripByParticipantId({
+        email: guestEmail.trim(),
+        name: guestName,
+        participantId,
+      });
+
+      await tripStorage.save(tripId);
+
+      Alert.alert('Confirmar presença', 'Sua presença foi confirmada com sucesso.', [
+        {
+          text: 'Ok, continuar',
+          onPress: async () => {
+            await getTripDetails();
+            setShowModal(MODAL.NONE);
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Confirmar presença', 'Ocorreu um erro ao confirmar sua presença, tente novamente.');
+    } finally {
+      setIsConfirmingPresence(false);
     }
   }
 
@@ -207,7 +255,7 @@ export default function Trip() {
         </View>
       </Modal>
 
-      <Modal title="Confirmar presença">
+      <Modal title="Confirmar presença" visible={showModal === MODAL.CONFIRM_PRESENCE}>
         <View className="gap-4 mt-4 mb-8">
           <Text className="text-zinc-400 front-regular leading-6 mt-2">
             Você foi convidado(a) para participar de uma viagem para{' '}
@@ -220,15 +268,22 @@ export default function Trip() {
 
           <Input variant="secondary">
             <User color={colors.zinc[400]} size={20} />
-            <Input.Field placeholder="Seu nome completo" />
+            <Input.Field placeholder="Seu nome completo" onChangeText={setGuestName} value={guestName} />
           </Input>
 
           <Input variant="secondary">
             <Mail color={colors.zinc[400]} size={20} />
-            <Input.Field placeholder="E-mail de confirmação" />
+            <Input.Field
+              placeholder="E-mail de confirmação"
+              onChangeText={setGuestEmail}
+              value={guestEmail}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+            />
           </Input>
 
-          <Button>
+          <Button onPress={handleConfirmPresence} isLoading={isConfirmingPresence}>
             <Button.Title>Confirmar minha presença</Button.Title>
           </Button>
         </View>
